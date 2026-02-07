@@ -308,7 +308,6 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 **Happy Testing! 🎉**
 
-If this guide helped you write better smart contract tests, consider [buying me a coffee](YOUR_COFFEE_LINK) or sharing the blog post!
 
 ---
 
