@@ -1,31 +1,67 @@
 //SPDX-License-Identifier:MIT
 pragma solidity ^0.8.24;
 
-contract Vesting {
+/**
+ * @title TokenVesting
+ * @notice Linear vesting contract for token distribution
+ */
+contract TokenVesting {
+    address public immutable beneficiary;
     uint256 public immutable startTime;
     uint256 public immutable duration;
     uint256 public immutable totalAmount;
-    address public immutable beneficiary;
     uint256 public claimed;
-    
-    constructor(address _beneficiary, uint256 _duration, uint256 _amount) {
+
+    error NotBeneficiary();
+    error NothingToClaim();
+
+    constructor(
+        address _beneficiary,
+        uint256 _duration,
+        uint256 _totalAmount
+    ) {
         beneficiary = _beneficiary;
         startTime = block.timestamp;
         duration = _duration;
-        totalAmount = _amount;
+        totalAmount = _totalAmount;
     }
-    
+
+    /**
+     * @notice Calculate vested amount at current time
+     * @return Amount vested so far
+     */
     function vestedAmount() public view returns (uint256) {
-        if (block.timestamp < startTime) return 0;
-        if (block.timestamp >= startTime + duration) return totalAmount;
-        return (totalAmount * (block.timestamp - startTime)) / duration;
+        // Before vesting starts
+        if (block.timestamp < startTime) {
+            return 0;
+        }
+
+        // After vesting completes
+        if (block.timestamp >= startTime + duration) {
+            return totalAmount;
+        }
+
+        // During vesting period - linear interpolation
+        uint256 timeElapsed = block.timestamp - startTime;
+        return (totalAmount * timeElapsed) / duration;
     }
-    
-    function claim() external {
-        require(msg.sender == beneficiary, "Not beneficiary");
+
+    /**
+     * @notice Claim vested tokens
+     * @return Amount claimed
+     */
+    function claim() external returns (uint256) {
+        if (msg.sender != beneficiary) revert NotBeneficiary();
+
         uint256 vested = vestedAmount();
         uint256 claimable = vested - claimed;
-        require(claimable > 0, "Nothing to claim");
+
+        if (claimable == 0) revert NothingToClaim();
+
         claimed += claimable;
+
+        // In production, transfer tokens here
+
+        return claimable;
     }
 }
